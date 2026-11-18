@@ -35,7 +35,11 @@ describe("GET /api/puzzle/image", () => {
 
     const res = await getImage(req(`/api/puzzle/image?date=${KNOWN_DATE}`));
 
-    expect(fetchSpy).toHaveBeenCalledExactlyOnceWith(city.image.url);
+    expect(fetchSpy).toHaveBeenCalledExactlyOnceWith(city.image.url, {
+      headers: {
+        "User-Agent": expect.stringMatching(/^Stadje\/.+stadje\.paroose\.dev/),
+      },
+    });
     expect(res.status).toBe(200);
     expect(res.headers.get("content-type")).toBe("image/png");
     expect(res.headers.get("cache-control")).toBe("public, max-age=3600");
@@ -70,6 +74,7 @@ describe("GET /api/puzzle/image", () => {
     expect(res.status).toBe(200);
     expect(fetchSpy).toHaveBeenCalledExactlyOnceWith(
       cityForDate(KNOWN_DATE)!.image.url,
+      expect.objectContaining({ headers: expect.any(Object) }),
     );
   });
 
