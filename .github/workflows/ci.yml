@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      id-token: write
+      pull-requests: write # sticky coverage comment
     steps:
       - uses: actions/checkout@v4
 
@@ -35,12 +35,35 @@ jobs:
       - name: Unit & integration tests with coverage
         run: pnpm test:coverage
 
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v5
+      - name: Render coverage report
+        id: coverage
+        if: ${{ !cancelled() && hashFiles('coverage/coverage-summary.json') != '' }}
+        run: |
+          node scripts/coverage-report.mjs > coverage/report.md
+          cat coverage/report.md >> "$GITHUB_STEP_SUMMARY"
+
+      # Fork and Dependabot PRs get a read-only token, so they only get the job summary above.
+      - name: Post coverage comment on PR
+        if: ${{ !cancelled() && steps.coverage.outcome == 'success' && github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && github.actor != 'dependabot[bot]' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          comment_id=$(gh api "repos/$GITHUB_REPOSITORY/issues/$PR_NUMBER/comments" --paginate \
+            --jq '.[] | select(.user.login == "github-actions[bot]" and (.body | startswith("<!-- stadje-coverage-report -->"))) | .id' | head -n1)
+          if [ -n "$comment_id" ]; then
+            gh api --method PATCH "repos/$GITHUB_REPOSITORY/issues/comments/$comment_id" -F body=@coverage/report.md > /dev/null
+          else
+            gh pr comment "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --body-file coverage/report.md
+          fi
+
+      - name: Upload coverage HTML report
+        if: ${{ !cancelled() && hashFiles('coverage/index.html') != '' }}
+        uses: actions/upload-artifact@v4
         with:
-          files: ./coverage/lcov.info
-          fail_ci_if_error: true
-          use_oidc: true
+          name: coverage-report
+          path: coverage/
+          retention-days: 14
 
       - name: Build
         run: pnpm build

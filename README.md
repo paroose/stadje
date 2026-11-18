@@ -5,7 +5,6 @@
 # Stadje
 
 [![CI](https://github.com/PascalRoose/stadje/actions/workflows/ci.yml/badge.svg)](https://github.com/PascalRoose/stadje/actions/workflows/ci.yml)
-[![codecov](https://codecov.io/gh/PascalRoose/stadje/graph/badge.svg)](https://codecov.io/gh/PascalRoose/stadje)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 A daily, Wordle-like guessing game: one Dutch city per day, six guesses, three hints after each
