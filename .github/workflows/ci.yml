@@ -29,9 +29,6 @@ jobs:
       - name: Type check
         run: pnpm exec tsc --noEmit
 
-      - name: Unit & integration tests
-        run: pnpm test
-
       - name: Unit & integration tests with coverage
         run: pnpm test:coverage
 
